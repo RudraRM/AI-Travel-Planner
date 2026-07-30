@@ -13,6 +13,7 @@ export interface Preferences {
   defaultStyle: TravelStyle;
   defaultInterests: Interest[];
   units: "metric" | "imperial";
+  groqApiKey: string;
 }
 
 interface AppState {
@@ -62,6 +63,7 @@ export const useAppStore = create<AppState>()(
         defaultStyle: "comfort",
         defaultInterests: ["culture", "food"],
         units: "metric",
+        groqApiKey: "",
       },
 
       addTrip: (trip) => set((s) => ({ trips: [trip, ...s.trips] })),

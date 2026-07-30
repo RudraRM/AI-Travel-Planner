@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Desktop, DownloadSimple, Trash, UserCircle } from "@phosphor-icons/react";
+import { Sun, Moon, Desktop, DownloadSimple, Trash, UserCircle, Key } from "@phosphor-icons/react";
 import { interestOptions } from "@/lib/data/destinations";
 import type { Interest, TravelStyle } from "@/lib/types";
 import type { Currency } from "@/lib/format";
@@ -160,6 +160,31 @@ export function SettingsClient() {
                   </Chip>
                 ))}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Groq API Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key size={20} className="text-ocean" /> AI Assistant
+            </CardTitle>
+            <CardDescription>Add your Groq API key to power the AI travel assistant. Stored securely on this device.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex max-w-sm flex-col gap-2">
+              <Label htmlFor="groq-api-key">Groq API Key</Label>
+              <Input
+                id="groq-api-key"
+                type="password"
+                defaultValue={prefs.groqApiKey}
+                placeholder="gsk_..."
+                onBlur={(e) => setPrefs({ groqApiKey: e.target.value.trim() })}
+              />
+              <p className="text-xs text-ink-muted">
+                Get your free API key from <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-ocean-strong hover:underline">console.groq.com</a>
+              </p>
             </div>
           </CardContent>
         </Card>
