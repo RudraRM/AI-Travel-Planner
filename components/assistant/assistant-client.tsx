@@ -3,7 +3,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PaperPlaneRight, ChatCircleDots, Broom, Sparkle } from "@phosphor-icons/react";
-import { assistantReply } from "@/lib/engine/assistant";
 import { useAppStore, useHasMounted } from "@/lib/store";
 import { PageHeader } from "@/components/travel/page-header";
 import { Button } from "@/components/ui/button";
@@ -35,8 +34,7 @@ function Bubble({ message }: { message: { role: "user" | "assistant"; content: s
 export function AssistantClient() {
   const mounted = useHasMounted();
   const chat = useAppStore((s) => s.chat);
-  const trips = useAppStore((s) => s.trips);
-  const currency = useAppStore((s) => s.prefs.currency);
+  const groqApiKey = useAppStore((s) => s.prefs.groqApiKey);
   const pushChat = useAppStore((s) => s.pushChat);
   const clearChat = useAppStore((s) => s.clearChat);
 
@@ -56,36 +54,58 @@ export function AssistantClient() {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  function send(text: string) {
+  async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || thinking || streaming !== null) return;
+
+    if (!groqApiKey) {
+      alert("Please add your Groq API key in Settings to use the AI assistant.");
+      return;
+    }
 
     pushChat({ role: "user", content: trimmed });
     setInput("");
     setThinking(true);
+    setSuggestions([]);
 
-    timersRef.current.push(
-      setTimeout(() => {
-        const reply = assistantReply(trimmed, { trips, currency });
-        setThinking(false);
-        setSuggestions(reply.suggestions);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...chat, { role: "user", content: trimmed }],
+          groqApiKey,
+        }),
+      });
 
-        // Word-by-word reveal, then commit to the store
-        const words = reply.content.split(" ");
-        let i = 0;
-        const step = () => {
-          i += 2;
-          setStreaming(words.slice(0, i).join(" "));
-          if (i < words.length) {
-            timersRef.current.push(setTimeout(step, 28));
-          } else {
-            setStreaming(null);
-            pushChat({ role: "assistant", content: reply.content });
-          }
-        };
-        step();
-      }, 650)
-    );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to get response");
+      }
+
+      const data = await response.json();
+      setThinking(false);
+
+      // Word-by-word reveal animation
+      const words = data.content.split(" ");
+      let i = 0;
+      const step = () => {
+        i += 2;
+        setStreaming(words.slice(0, i).join(" "));
+        if (i < words.length) {
+          timersRef.current.push(setTimeout(step, 28));
+        } else {
+          setStreaming(null);
+          pushChat({ role: "assistant", content: data.content });
+        }
+      };
+      step();
+    } catch (error) {
+      setThinking(false);
+      const message = error instanceof Error ? error.message : "Error connecting to AI";
+      alert(message);
+      setSuggestions(OPENERS);
+    }
   }
 
   return (
