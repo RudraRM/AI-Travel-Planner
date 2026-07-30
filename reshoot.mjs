@@ -1,0 +1,10 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
+const page = await (await browser.newContext({ viewport: { width: 1440, height: 960 } })).newPage();
+await page.goto("http://127.0.0.1:3100/", { waitUntil: "networkidle" }).catch(() => {});
+await page.waitForTimeout(900);
+await page.screenshot({ path: "shots/40-home-recheck.png" });
+await page.goto("http://127.0.0.1:3100/budget", { waitUntil: "networkidle" }).catch(() => {});
+await page.waitForTimeout(900);
+await page.screenshot({ path: "shots/41-budget-recheck.png" });
+await browser.close();
